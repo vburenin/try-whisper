@@ -6,7 +6,8 @@ This workspace hosts a local, real-time speech recognition CLI built on top of `
 
 - `vendor/whisper.cpp/`: upstream whisper.cpp repository cloned as a submodule-like vendor; already built with `make METAL=1` producing `build/src/libwhisper.dylib` and helper binaries such as `quantize`.
 - `src/try_whisper/`: Python package implementing audio capture (`audio.py`), a ring buffer (`ring_buffer.py`), ctypes bindings to whisper.cpp (`whisper_cpp.py`), the streaming transcription pipeline with optional WebRTC VAD (`transcriber.py`), and the Typer-based CLI (`cli.py`).
-- `scripts/download_model.py`: helper script to download ggml models from Hugging Face and optionally quantize them using the bundled `quantize` binary.
+- `scripts/download_model.py`: HTTPS + curl-backup downloader for ggml models with optional quantization.
+- `scripts/setup_project.sh`: single-entry bootstrap (builds whisper.cpp, creates `.venv`, installs deps, downloads models).
 - `tests/`: currently contains `test_ring_buffer.py` covering buffer wraparound/tail behavior.
 - `README.md`: setup instructions, including dependency installation, building the Metal backend, downloading models, and running the CLI.
 
@@ -46,4 +47,3 @@ This workspace hosts a local, real-time speech recognition CLI built on top of `
 - Need to ensure virtualenv is created before running `pytest` or the CLI (dependencies not yet installed).
 - Consider wrapping the ctypes bindings with higher-level error handling or adopting an official Python binding if upstream adds one.
 - Potential enhancements: partial transcript UI improvements, logging/metrics export, packaging for distribution.
-

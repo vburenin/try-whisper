@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import argparse
 import sys
-import urllib.request
 from pathlib import Path
+
+import requests
 
 MODEL_BASE_URL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main"
 MODEL_NAMES = {
@@ -22,22 +23,62 @@ MODEL_NAMES = {
 QUANT_SUFFIX = "ggml-{}-{}.bin"
 
 
-def download(url: str, dest: Path) -> None:
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    with urllib.request.urlopen(url) as response, dest.open("wb") as out:
-        total = int(response.headers.get("Content-Length", 0))
-        downloaded = 0
-        block_size = 1 << 14
-        while True:
-            chunk = response.read(block_size)
+class DownloadError(Exception):
+    pass
+
+
+def stream_to_file(response: requests.Response, dest: Path) -> None:
+    total = int(response.headers.get("Content-Length", 0))
+    downloaded = 0
+    block_size = 1 << 14
+    with dest.open("wb") as out:
+        for chunk in response.iter_content(block_size):
             if not chunk:
-                break
+                continue
             out.write(chunk)
             downloaded += len(chunk)
             if total:
                 percent = 100 * downloaded / total
                 print(f"\rDownloading {dest.name}: {percent:5.1f}%", end="", flush=True)
-    print("\rDownload complete".ljust(40))
+    if total:
+        print(f"\rDownloading {dest.name}: done".ljust(40))
+    else:
+        print(f"Downloaded {dest.name} ({downloaded} bytes)")
+
+
+def download_with_requests(url: str, dest: Path, *, verify: bool = True) -> None:
+    try:
+        with requests.get(url, stream=True, timeout=60, allow_redirects=True, verify=verify) as response:
+            response.raise_for_status()
+            stream_to_file(response, dest)
+    except requests.exceptions.SSLError as exc:
+        raise DownloadError("SSL certificate verification failed") from exc
+    except requests.RequestException as exc:
+        raise DownloadError(str(exc)) from exc
+
+
+def download_with_curl(url: str, dest: Path) -> None:
+    import subprocess
+
+    print("Falling back to curl...")
+    cmd = ["curl", "-L", "--fail", "--retry", "3", "--retry-delay", "5", "-o", str(dest), url]
+    try:
+        subprocess.run(cmd, check=True)
+    except FileNotFoundError as exc:
+        raise DownloadError("curl executable not found; install curl or fix SSL certificates") from exc
+    except subprocess.CalledProcessError as exc:
+        raise DownloadError(f"curl failed with exit code {exc.returncode}") from exc
+
+
+def download(url: str, dest: Path) -> None:
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        download_with_requests(url, dest)
+    except DownloadError as first_error:
+        try:
+            download_with_curl(url, dest)
+        except DownloadError as second_error:
+            raise SystemExit(f"Failed to download {url}: {second_error}") from first_error
 
 
 def run_quantize(model: Path, quantize: str, output: Path) -> None:
@@ -97,4 +138,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

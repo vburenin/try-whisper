@@ -41,7 +41,7 @@ Use the helper script to grab a model and optional quantized variant:
 ./scripts/download_model.py base.en --quantize q5_0
 ```
 
-The files are stored in `models/` by default, e.g. `models/ggml-base.en-q5_0.bin`.
+The files are stored in `models/` by default, e.g. `models/ggml-base.en-q5_0.bin`. The downloader uses Python's `requests` with a fallback to `curl`, so ensure `curl` is available on systems with strict SSL trust stores.
 
 ## Run the CLI
 
