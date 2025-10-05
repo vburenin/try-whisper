@@ -15,7 +15,17 @@ Real-time speech recognition CLI for macOS that streams microphone audio through
   pip install -e .[dev]
   ```
 
-## Build the native backend
+## Quick start
+
+```bash
+./scripts/setup_project.sh --all-models  # optional --all-models downloads every ggml variant
+source .venv/bin/activate
+python -m try_whisper.cli --model base.en-q5_0 --final-only
+```
+
+The setup script clones/builds `whisper.cpp`, creates a Python virtual environment, installs dependencies, and downloads the requested models (default: `base.en` with `q5_0` quantization). Use `./scripts/setup_project.sh --help` for customization.
+
+## Manual native backend build
 
 ```bash
 ./scripts/setup_whisper_cpp.sh
