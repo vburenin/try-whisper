@@ -89,3 +89,7 @@ scripts/              # Utility scripts (native setup, model download)
 
 - Large model binaries and the `vendor/whisper.cpp` checkout are ignored by git; CI/bootstrap scripts recreate them.
 - Use `scripts/setup_whisper_cpp.sh` and `scripts/download_model.py` on fresh clones.
+
+## License
+
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
